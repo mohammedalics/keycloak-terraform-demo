@@ -1,0 +1,45 @@
+version: '3'
+
+volumes:
+  postgres_data:
+    driver: local
+
+services:
+  postgres:
+    image: postgres
+    volumes:
+    - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password
+    ports:
+    - "5432:5432"
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0.6
+    environment:
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: password
+      KC_DB_URL_HOST: postgres
+      KC_DB: postgres
+      KC_DB_SCHEMA: public
+      KC_HTTP_RELATIVE_PATH: /keycloak
+      KC_HOSTNAME_ADMIN: 127.0.0.1
+      KC_HOSTNAME: localhost
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_FEATURES: token-exchange,admin-fine-grained-authz
+    command:
+    - start-dev
+    ports:
+    - "8080:8080"
+    - "8787:8787"
+    depends_on:
+    - postgres
+  config_keycloak:
+    image: ubuntu
+    volumes:
+    - ./keycloak-docker-config.sh:/opt/keycloak-docker-config.sh
+    command: ./opt/keycloak-docker-config.sh
+    depends_on:
+    - keycloak
